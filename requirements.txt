@@ -8,3 +8,7 @@ torch
 scikit-learn
 xgboost
 lightgbm
+seaborn
+statsmodels
+wordcloud
+nltk
