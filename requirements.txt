@@ -1,3 +1,14 @@
 pandas
-matplotlib.pyplot
-re
+matplotlib
+transformers
+xgboost
+lightgbm
+numpy
+torch
+scikit-learn
+xgboost
+lightgbm
+seaborn
+statsmodels
+wordcloud
+nltk
