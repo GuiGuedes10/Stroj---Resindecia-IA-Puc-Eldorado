@@ -12,3 +12,7 @@ seaborn
 statsmodels
 wordcloud
 nltk
+re
+
+fastapi[standard]
+joblib
