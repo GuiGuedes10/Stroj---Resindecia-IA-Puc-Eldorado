@@ -1,18 +1,18 @@
-pandas
-matplotlib
-transformers
-xgboost
-lightgbm
-numpy
-torch
-scikit-learn
-xgboost
-lightgbm
-seaborn
-statsmodels
-wordcloud
-nltk
-re
-
-fastapi[standard]
-joblib
+# dataset
+matplotlib==3.11.1
+nltk==3.10.3
+seaborn==0.13.2
+statsmodels==0.15.0
+wordcloud==1.9.6
+# dataset e modelo
+numpy==2.5.2
+pandas==3.0.5
+# modelo
+lightgbm==4.7.0
+scikit-learn==1.9.0
+torch==2.14.0
+transformers==5.16.1
+xgboost==3.4.1
+# backend
+fastapi[standard]==0.141.1
+joblib==1.6.0
