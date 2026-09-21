@@ -1,0 +1,8 @@
+Model,N_Clusters,Noise_Count,Noise_Ratio_%,Silhouette,Davies_Bouldin,Calinski_Harabasz,ARI_Ref,Fit_Time_Sec
+HDBSCAN,4,6,0.02,0.0963,1.5753,483.32,-0.0132,3.691
+DBSCAN,6,1012,2.58,0.0948,1.4917,293.84,-0.0128,1.798
+MiniBatch K-Means,4,0,0.0,0.0856,2.9856,2791.9,0.2484,0.993
+K-Means,4,0,0.0,0.085,2.9831,2794.14,0.2512,6.315
+Agglomerative (Ward),4,0,0.0,0.0738,3.1867,2515.03,0.228,0.964
+Gaussian Mixture (GMM),4,0,0.0,0.0436,3.023,1688.58,0.2407,0.989
+BIRCH,4,0,0.0,0.0356,4.0598,1820.6,0.1529,5.127
