@@ -1,15 +1,8 @@
 import torch
-from transformers import AutoTokenizer, AutoModel
 import numpy as np
 
-MODEL_NAME = 'neuralmind/bert-base-portuguese-cased'
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model_name = MODEL_NAME
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-bert_model = AutoModel.from_pretrained(model_name).to(device)
-
-def chunk_text_by_tokens(text, max_tokens=128, overlap=20):
+def chunk_text_by_tokens(text, tokenizer, max_tokens=128, overlap=20):
     tokens = tokenizer.encode(text, add_special_tokens=False)
 
     if len(tokens) <= max_tokens:
@@ -26,15 +19,17 @@ def chunk_text_by_tokens(text, max_tokens=128, overlap=20):
 
 
 def extract_bert_embeddings_with_chunks(
-    text_list, max_length=512, batch_size=32
+    text_list, bert_model, tokenizer, max_length=512, batch_size=32
 ):
+    device = next(bert_model.parameters()).device
+
     bert_model.eval()
     document_embeddings = []
 
     with torch.no_grad():
         for text in text_list:
             text_chunks = chunk_text_by_tokens(
-                text, max_tokens=max_length - 2, overlap=20
+                text, tokenizer, max_tokens=max_length - 2, overlap=20
             )
 
             chunk_vectors = []
