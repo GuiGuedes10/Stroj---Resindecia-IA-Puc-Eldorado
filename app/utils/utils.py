@@ -1,4 +1,5 @@
 import re
+from urllib.parse import urlparse
 
 # 1. Caixa alta é predominante
 # Considera apenas letras e verifica se mais de 50% estão em maiúsculas
@@ -34,3 +35,10 @@ def extract_features_from_text(textos):
         multiplas_interrogacoes(textos),
         possui_caracteres_especiais(textos)
     )
+
+def is_url(text: str) -> bool:
+    try:
+        result = urlparse(text.strip())
+        return all([result.scheme in ["http", "https"], result.netloc])
+    except Exception:
+        return False
