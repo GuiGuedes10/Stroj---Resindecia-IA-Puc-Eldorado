@@ -1,7 +1,7 @@
 import numpy as np
 from fastapi import HTTPException, Request
 from services.bert import extract_bert_embeddings_with_chunks
-from services.crawler import web_extract_text
+from services.crawler import web_extract_text, search_related
 from utils.utils import extract_features_from_text
 from utils.utils import is_url
 
@@ -48,8 +48,11 @@ async def newsCheck(request: Request):
 
     prediction_value = int(prediction) if hasattr(prediction, "item") else prediction
 
+    related = search_related(text)
+
     return {
         "text": text,
         "prediction": prediction_value,
-        "probabilities": probabilities
+        "probabilities": probabilities,
+        "related": related 
     }
