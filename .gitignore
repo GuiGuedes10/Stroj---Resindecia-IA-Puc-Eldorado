@@ -1,2 +1,5 @@
 .venv/
 .vscode/
+__pycache__/
+requests.http
+model/data_bert_*

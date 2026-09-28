@@ -13,3 +13,6 @@ scikit-learn==1.9.0
 torch==2.14.0
 transformers==5.16.1
 xgboost==3.4.1
+# backend
+fastapi[standard]==0.141.1
+joblib==1.6.0
