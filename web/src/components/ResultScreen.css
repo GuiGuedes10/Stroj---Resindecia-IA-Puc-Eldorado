@@ -1,0 +1,105 @@
+/* Cabeçalho e corpo dos frames 3b–3d. */
+
+.result-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  /* Sugestão 7 — o padding vertical cai de 20px para 12px para compensar o
+     botão de 44px: o cabeçalho continua com a mesma altura do arquivo. */
+  padding: 12px var(--stroj-page-x);
+  font-size: 13px;
+}
+
+.result-header__brand {
+  font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight);
+  font-size: 15px;
+}
+
+/* A origem ocupa o meio e corta com reticências quando não cabe. */
+.result-header__origin {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-neutral-500);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Sugestão 7 — é a única saída da tela e tinha ~28px de alvo. 44px é o
+   mínimo recomendado para toque; o tamanho da fonte não muda. */
+.result-header__action {
+  flex: none;
+  min-height: 44px;
+  font-size: 13px;
+}
+
+.result-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--stroj-section-gap);
+  padding: 44px var(--stroj-page-x) 48px;
+}
+
+.result-classification {
+  display: flex;
+  max-width: var(--stroj-read-width);
+  flex-direction: column;
+  gap: 16px;
+}
+
+.result-classification__title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: var(--font-heading-weight);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  text-wrap: pretty;
+}
+
+.result-classification__explanation {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--color-neutral-400);
+  text-wrap: pretty;
+}
+
+/* A nota de limite segue a mesma grade das seções, mas sem rótulo: o texto
+   alinha com o resto do conteúdo em vez de começar na margem da página. */
+.result-note {
+  display: grid;
+  gap: var(--stroj-section-col-gap);
+  grid-template-columns: var(--stroj-label-width) 1fr;
+  margin: 0;
+}
+
+.result-note > span {
+  grid-column: 2;
+  max-width: var(--stroj-read-width);
+  font-size: 12px;
+  color: var(--color-neutral-500);
+}
+
+@media (max-width: 860px) {
+  .result-note {
+    grid-template-columns: 1fr;
+  }
+  .result-note > span {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 700px) {
+  .result-header {
+    gap: 12px;
+  }
+  .result-body {
+    padding-top: 32px;
+    gap: 28px;
+  }
+  .result-classification__title {
+    font-size: 24px;
+  }
+}
