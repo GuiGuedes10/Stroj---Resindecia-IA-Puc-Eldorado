@@ -1,38 +1,34 @@
+import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from bert import extract_bert_embeddings_with_chunks
-from utils import extract_features_from_text
+import uvicorn
 import joblib
+from dotenv import load_dotenv
+from transformers import AutoTokenizer, AutoModel
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from routes import newsCheckRoute
 
-app = FastAPI()
+load_dotenv()
 
-#classificador = joblib.load("classificador.pkl")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.bert_tokenizer = AutoTokenizer.from_pretrained(os.getenv("MODEL_NAME"))
+    app.state.bert_model = AutoModel.from_pretrained(os.getenv("MODEL_NAME"))
+    app.state.svm_model = joblib.load(os.getenv("CLASSIFICATION_MODEL"))
+    app.state.scaler = joblib.load(os.getenv("SCALER_MODEL"))
+    yield
+
+app = FastAPI(lifespan=lifespan)
+
+app.state.limiter = newsCheckRoute.limiter 
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
+app.include_router(newsCheckRoute.router, prefix="/news")
 
-@app.post("/api/predict")
-def predict(data: dict):
-    text = data["text"]
-    print(f"Received text for prediction: {text}")
-    
-    # Extract BERT embeddings
-    X = extract_bert_embeddings_with_chunks(text)
-    print(f"Extracted embeddings shape: {X.shape}")
-    
-    # Extract features from the text
-    features = extract_features_from_text(text)
-    print(f"Extracted features: {features}")
-    
-    # Combine embeddings and features
-    
-    
-    # Make prediction using the classifier
-    #prediction = classificador.predict(X)[0]
-    #print(f"Prediction result: {prediction}")
-
-    return {
-        #"prediction": int(prediction)
-        "prediction": 0.5
-    }
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
