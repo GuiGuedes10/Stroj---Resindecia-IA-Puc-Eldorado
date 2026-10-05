@@ -1,0 +1,8 @@
+# O esbuild (dependência do Vite) roda um script de instalação para colocar o
+# próprio binário no lugar. Sem esta aprovação o pnpm 10+ bloqueia o script e
+# `pnpm install` termina com erro.
+# allowBuilds é a chave do pnpm 12; onlyBuiltDependencies, a do pnpm 10 e 11.
+allowBuilds:
+  esbuild: true
+onlyBuiltDependencies:
+  - esbuild

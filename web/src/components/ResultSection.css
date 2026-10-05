@@ -1,0 +1,36 @@
+.result-section {
+  display: grid;
+  gap: var(--stroj-section-col-gap);
+  grid-template-columns: var(--stroj-label-width) 1fr;
+  align-items: start;
+}
+
+.result-section__label {
+  margin: 0;
+  padding-top: var(--stroj-label-offset, 0);
+  font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight);
+  /* Sugestão 6 — medido, o contraste de neutral-500 já era 6.08:1, folgado
+     no AA: o problema era só o tamanho, 11px em caixa alta com letter-spacing.
+     12px em neutral-400 (8.75:1) resolve o tamanho e sobra margem. */
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  line-height: 1.55;
+  text-transform: uppercase;
+  color: var(--color-neutral-400);
+}
+
+.result-section__content {
+  min-width: 0;
+}
+
+/* A coluna de 200px + 720px de leitura deixa de caber bem antes de 1440px. */
+@media (max-width: 860px) {
+  .result-section {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .result-section__label {
+    padding-top: 0;
+  }
+}
