@@ -11,9 +11,9 @@ import {
 
 const BASE_URL = (import.meta.env.VITE_STROJ_API_URL ?? '').replace(/\/$/, '');
 
-/** Link e texto vão no mesmo campo `text`; o backend detecta qual é. */
+/** Link e texto vão no mesmo campo `request`; o backend detecta qual é. */
 export async function predict(text: string, signal?: AbortSignal): Promise<Analysis> {
-  const body: PredictRequest = { text };
+  const body: PredictRequest = { request: text };
 
   let response: Response;
   try {

@@ -83,7 +83,7 @@ def post(client, body, **kwargs):
 # ─── Resposta ────────────────────────────────────────────────────────────────
 
 def test_texto_colado(client, calls):
-    response = post(client, {"text": "  Governo anuncia pacote de mudanças no imposto de renda  "})
+    response = post(client, {"request": "  Governo anuncia pacote de mudanças no imposto de renda  "})
 
     assert response.status_code == 200
     body = response.json()
@@ -99,7 +99,7 @@ def test_texto_colado(client, calls):
 
 def test_link_com_esquema(client, calls):
     url = "https://g1.globo.com/sp/sao-paulo/noticia.ghtml"
-    body = post(client, {"text": url}).json()
+    body = post(client, {"request": url}).json()
 
     assert calls["fetched"] == [url]
     assert body["url"] == url
@@ -109,7 +109,7 @@ def test_link_com_esquema(client, calls):
 
 
 def test_link_sem_esquema_ganha_https(client, calls):
-    body = post(client, {"text": "g1.globo.com/sp/noticia.ghtml"}).json()
+    body = post(client, {"request": "g1.globo.com/sp/noticia.ghtml"}).json()
 
     assert calls["fetched"] == ["https://g1.globo.com/sp/noticia.ghtml"]
     assert body["url"] == "https://g1.globo.com/sp/noticia.ghtml"
@@ -117,7 +117,7 @@ def test_link_sem_esquema_ganha_https(client, calls):
 
 def test_prediction_segue_as_probabilidades(client):
     main.app.state.classifier = FakeClassifier(p_true=0.9)
-    body = post(client, {"text": "Texto qualquer de notícia para classificar."}).json()
+    body = post(client, {"request": "Texto qualquer de notícia para classificar."}).json()
 
     assert body["prediction"] == 1
     assert body["probabilities"]["true"] == pytest.approx(0.9)
@@ -136,10 +136,10 @@ def assert_error(response, status, code):
 
 def test_pagina_sem_texto(client, monkeypatch):
     monkeypatch.setattr(controller, "web_extract_text", lambda url: "")
-    assert_error(post(client, {"text": "https://exemplo.com.br/paywall"}), 502, "page_unreachable")
+    assert_error(post(client, {"request": "https://exemplo.com.br/paywall"}), 502, "page_unreachable")
 
 
-@pytest.mark.parametrize("body", [{}, {"text": ""}, {"text": "   "}, {"text": 123}, {"request": "texto"}, []])
+@pytest.mark.parametrize("body", [{}, {"request": ""}, {"request": "   "}, {"request": 123}, {"text": "texto"}, []])
 def test_texto_ausente_ou_vazio(client, body):
     assert_error(post(client, body), 400, "text_too_short")
 
@@ -154,7 +154,7 @@ def test_json_invalido(client):
 
 
 def test_texto_longo_demais(client):
-    assert_error(post(client, {"text": "a " * 10_001}), 413, "text_too_long")
+    assert_error(post(client, {"request": "a " * 10_001}), 413, "text_too_long")
 
 
 def test_falha_na_classificacao(client):
@@ -163,7 +163,7 @@ def test_falha_na_classificacao(client):
             raise RuntimeError("modelo quebrado")
 
     main.app.state.classifier = Broken()
-    assert_error(post(client, {"text": "Texto qualquer de notícia para classificar."}), 500, "classification_failed")
+    assert_error(post(client, {"request": "Texto qualquer de notícia para classificar."}), 500, "classification_failed")
 
 
 def test_limite_de_consultas(client, monkeypatch):
@@ -171,7 +171,7 @@ def test_limite_de_consultas(client, monkeypatch):
     main.app.state.limiter.enabled = True
     main.app.state.limiter.reset()
 
-    body = {"text": "Texto qualquer de notícia para classificar."}
+    body = {"request": "Texto qualquer de notícia para classificar."}
     assert post(client, body).status_code == 200
     assert post(client, body).status_code == 200
     assert_error(post(client, body), 429, "rate_limited")
@@ -193,7 +193,7 @@ def test_preflight_do_front(client):
 
 
 def test_origem_desconhecida_nao_ganha_cors(client):
-    response = client.post("/news/check", json={"text": "x"}, headers={"Origin": "https://outro-site.com"})
+    response = client.post("/news/check", json={"request": "x"}, headers={"Origin": "https://outro-site.com"})
     assert "access-control-allow-origin" not in response.headers
 
 

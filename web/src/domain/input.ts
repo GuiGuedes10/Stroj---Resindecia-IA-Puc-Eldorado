@@ -26,7 +26,7 @@ const BARE_HOST = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-
 /**
  * A entrada é um link?
  *
- * O backend também detecta — link e texto vão no mesmo campo `text`. O front
+ * O backend também detecta — link e texto vão no mesmo campo `request`. O front
  * detecta por conta própria só para a apresentação: a copy do carregamento e
  * a origem no cabeçalho ("Texto colado" ou a URL).
  *

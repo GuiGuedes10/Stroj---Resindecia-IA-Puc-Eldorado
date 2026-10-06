@@ -48,7 +48,7 @@ pnpm dev:mock                      # sem backend, com respostas de exemplo
 `POST /news/check`, com o texto ou o link no mesmo campo:
 
 ```json
-{ "text": "https://g1.globo.com/... ou o texto da notícia" }
+{ "request": "https://g1.globo.com/... ou o texto da notícia" }
 ```
 
 Resposta:
@@ -69,7 +69,7 @@ Erros vêm como `{"error": {"code": "...", "message": "..."}}`:
 
 | Status | `code` | Quando |
 | --- | --- | --- |
-| 400 | `text_too_short` | `text` ausente ou vazio |
+| 400 | `text_too_short` | `request` ausente ou vazio |
 | 400 | `invalid_request` | corpo não é JSON |
 | 413 | `text_too_long` | mais de 20.000 caracteres |
 | 429 | `rate_limited` | passou do `RATE_LIMIT` (padrão: 5 por minuto por IP) |

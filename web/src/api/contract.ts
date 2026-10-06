@@ -6,7 +6,7 @@
  * `toApiError` converte qualquer falha num `ApiError` de código fechado.
  *
  * O backend (app/controllers/newsCheckController.py) atende em
- * `POST /news/check`, recebe `{"text": ...}` e devolve
+ * `POST /news/check`, recebe `{"request": ...}` e devolve
  * `{text, url, prediction: 0|1, probabilities: {fake, true}, related}`.
  * Erros vêm como `{"error": {"code", "message"}}` com o status HTTP do caso.
  * O parse continua tolerante — probabilidades em 0–1 ou 0–100, objeto ou
@@ -19,7 +19,7 @@
 
 /** Corpo do POST. O mesmo campo leva link e texto; o backend detecta qual é. */
 export interface PredictRequest {
-  text: string;
+  request: string;
 }
 
 /** Resposta esperada do backend. */

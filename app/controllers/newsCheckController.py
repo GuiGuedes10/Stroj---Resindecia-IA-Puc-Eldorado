@@ -24,9 +24,9 @@ async def newsCheck(request: Request):
         raise ApiError(400, "invalid_request", "Payload JSON inválido.")
 
     # Link e texto chegam no mesmo campo; o backend decide qual é.
-    _request = body.get("text") if isinstance(body, dict) else None
+    _request = body.get("request") if isinstance(body, dict) else None
     if not isinstance(_request, str) or not _request.strip():
-        raise ApiError(400, "text_too_short", "O campo 'text' é obrigatório e não pode estar vazio.")
+        raise ApiError(400, "text_too_short", "O campo 'request' é obrigatório e não pode estar vazio.")
 
     _request = _request.strip()
     if len(_request) > MAX_TEXT_LENGTH:
