@@ -20,3 +20,5 @@ python-dotenv==1.2.3
 slowapi==0.1.10
 trafilatura==2.2.0
 ddgs==9.16.0
+# testes
+pytest==9.1.1
