@@ -2,7 +2,6 @@ import numpy as np
 from fastapi import HTTPException, Request
 from services.bert import extract_bert_embeddings_with_chunks
 from services.crawler import web_extract_text, search_related
-from utils.utils import extract_features_from_text
 from utils.utils import is_url
 
 async def newsCheck(request: Request):
@@ -24,26 +23,18 @@ async def newsCheck(request: Request):
 
     tokenizer = request.app.state.bert_tokenizer
     bert_model = request.app.state.bert_model
-    svm_model = request.app.state.svm_model
-    scaler = request.app.state.scaler
+    classification_model = request.app.state.classification_model
 
     X_bert = extract_bert_embeddings_with_chunks(
         text_list=[text],
         bert_model=bert_model,
         tokenizer=tokenizer
     )
-
-    raw_features = extract_features_from_text(text)
-    extra_features = np.array(raw_features).reshape(1, -1)
-    extra_features_scaled = scaler.transform(extra_features)
-
-    X_combined = np.hstack([X_bert, extra_features_scaled])
-
-    prediction = svm_model.predict(X_combined)[0]
+    prediction = classification_model.predict(X_bert)[0]
 
     probabilities = None
-    if hasattr(svm_model, "predict_proba"):
-        probs = svm_model.predict_proba(X_combined)[0]
+    if hasattr(classification_model, "predict_proba"):
+        probs = classification_model.predict_proba(X_bert)[0]
         probabilities = [float(p) for p in probs]
 
     prediction_value = int(prediction) if hasattr(prediction, "item") else prediction

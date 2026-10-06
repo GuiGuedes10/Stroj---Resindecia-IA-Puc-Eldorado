@@ -12,5 +12,5 @@ limiter = Limiter(key_func=get_remote_address)
 async def prompt(request: Request):
     tokenizer = request.app.state.bert_tokenizer
     bert_model = request.app.state.bert_model
-    svm_model = request.app.state.svm_model
+    classification_model = request.app.state.classification_model
     return await newsCheck(request)

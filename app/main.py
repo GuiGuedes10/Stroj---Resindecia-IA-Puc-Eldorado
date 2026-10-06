@@ -15,8 +15,7 @@ load_dotenv()
 async def lifespan(app: FastAPI):
     app.state.bert_tokenizer = AutoTokenizer.from_pretrained(os.getenv("MODEL_NAME"))
     app.state.bert_model = AutoModel.from_pretrained(os.getenv("MODEL_NAME"))
-    app.state.svm_model = joblib.load(os.getenv("CLASSIFICATION_MODEL"))
-    app.state.scaler = joblib.load(os.getenv("SCALER_MODEL"))
+    app.state.classification_model = joblib.load(os.getenv("CLASSIFICATION_MODEL"))
     yield
 
 app = FastAPI(lifespan=lifespan)
