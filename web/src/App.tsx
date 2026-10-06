@@ -25,6 +25,7 @@ const ERROR_MESSAGE: Record<ApiErrorCode, string> = {
   page_unreachable: copy.errors.pageUnreachable,
   text_too_short: copy.errors.textTooShort,
   text_too_long: copy.errors.textTooLong,
+  rate_limited: copy.errors.rateLimited,
   classification_failed: copy.errors.classificationFailed,
 };
 

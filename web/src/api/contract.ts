@@ -5,12 +5,13 @@
  * converte a resposta crua no `Analysis` que o resto do app usa, e
  * `toApiError` converte qualquer falha num `ApiError` de código fechado.
  *
- * Estado real do backend hoje (app/main.py): `POST /api/predict` recebe
- * `{"text": ...}` e devolve só `{"prediction": 0.5}` — sem `probabilities`,
- * sem `related`. Por isso o parse abaixo é tolerante: aceita probabilidades
- * em 0–1 ou 0–100, `prediction` como string ou número, e `related` ausente.
- * Quando o contrato definitivo chegar, dá para apertar o parse sem tocar em
- * mais nenhum arquivo.
+ * O backend (app/controllers/newsCheckController.py) atende em
+ * `POST /news/check`, recebe `{"text": ...}` e devolve
+ * `{text, url, prediction: 0|1, probabilities: {fake, true}, related}`.
+ * Erros vêm como `{"error": {"code", "message"}}` com o status HTTP do caso.
+ * O parse continua tolerante — probabilidades em 0–1 ou 0–100, objeto ou
+ * tupla, `prediction` como string ou número, `related` ausente — para o
+ * mock e para trocas de modelo no backend.
  */
 
 
@@ -109,6 +110,7 @@ export type ApiErrorCode =
   | 'page_unreachable'
   | 'text_too_short'
   | 'text_too_long'
+  | 'rate_limited'
   | 'classification_failed';
 
 export class ApiError extends Error {
@@ -264,6 +266,8 @@ export function mapErrorCode(code: string): ApiErrorCode {
       return 'text_too_short';
     case 'text_too_long':
       return 'text_too_long';
+    case 'rate_limited':
+      return 'rate_limited';
     default:
       return 'classification_failed';
   }
@@ -273,6 +277,7 @@ export function mapErrorCode(code: string): ApiErrorCode {
 export function mapHttpStatus(status: number): ApiErrorCode {
   if (status === 422 || status === 400) return 'text_too_short';
   if (status === 413) return 'text_too_long';
+  if (status === 429) return 'rate_limited';
   if (status === 502 || status === 504) return 'page_unreachable';
   return 'classification_failed';
 }

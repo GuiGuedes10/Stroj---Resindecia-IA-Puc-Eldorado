@@ -17,7 +17,7 @@ export async function predict(text: string, signal?: AbortSignal): Promise<Analy
 
   let response: Response;
   try {
-    response = await fetch(`${BASE_URL}/api/predict`, {
+    response = await fetch(`${BASE_URL}/news/check`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

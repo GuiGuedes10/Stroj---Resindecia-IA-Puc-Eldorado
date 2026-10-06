@@ -71,6 +71,8 @@ export const copy = {
     /** COPY NOVA */
     textTooLong:
       'Esse texto é longo demais. Cole no máximo 20.000 caracteres — cerca de uma matéria inteira.',
+    /** COPY NOVA — o backend limita as consultas por minuto (RATE_LIMIT em app/.env). */
+    rateLimited: 'Muitas consultas em pouco tempo. Aguarde um minuto e tente de novo.',
     /** COPY NOVA */
     classificationFailed:
       'Não conseguimos classificar este texto agora. Tente de novo em alguns instantes.',

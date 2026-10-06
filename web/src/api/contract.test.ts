@@ -123,7 +123,7 @@ describe('parsePredict', () => {
     expect(result.related).toEqual([]);
   });
 
-  it('falha quando não há probabilidades — é a resposta do backend hoje', () => {
+  it('falha quando não há probabilidades', () => {
     expect(() => parsePredict({ prediction: 0.5 }, 'enviado')).toThrow(ApiError);
   });
 
@@ -198,13 +198,69 @@ describe('mapeamento de erros', () => {
   it('traduz códigos do servidor', () => {
     expect(mapErrorCode('URL_UNREACHABLE')).toBe('page_unreachable');
     expect(mapErrorCode('text_too_long')).toBe('text_too_long');
+    expect(mapErrorCode('rate_limited')).toBe('rate_limited');
     expect(mapErrorCode('qualquer-coisa')).toBe('classification_failed');
   });
 
   it('traduz status HTTP', () => {
     expect(mapHttpStatus(422)).toBe('text_too_short');
     expect(mapHttpStatus(413)).toBe('text_too_long');
+    expect(mapHttpStatus(429)).toBe('rate_limited');
     expect(mapHttpStatus(502)).toBe('page_unreachable');
     expect(mapHttpStatus(500)).toBe('classification_failed');
+  });
+
+  it('traduz os códigos que o backend manda', () => {
+    // app/controllers/newsCheckController.py e app/utils/errors.py
+    expect(mapErrorCode('page_unreachable')).toBe('page_unreachable');
+    expect(mapErrorCode('text_too_short')).toBe('text_too_short');
+    expect(mapErrorCode('invalid_request')).toBe('classification_failed');
+    expect(mapErrorCode('classification_failed')).toBe('classification_failed');
+  });
+});
+
+describe('resposta do backend (POST /news/check)', () => {
+  // O formato exato que app/controllers/newsCheckController.py devolve.
+  const backend = {
+    // Acima de THIN_EXTRACTION_MAX_LENGTH, para não contar como extração pobre.
+    text: 'Texto extraído da página da notícia. '.repeat(5),
+    url: 'https://g1.globo.com/sp/sao-paulo/noticia.ghtml',
+    prediction: 0,
+    probabilities: { fake: 0.81, true: 0.19 },
+    related: [
+      {
+        title: 'Colisão na Marginal Tietê deixa feridos',
+        url: 'https://www.band.uol.com.br/noticias/acidente',
+        snippet: 'Acidente envolvendo três veículos.',
+      },
+      // A busca pode devolver campos nulos; o item é descartado.
+      { title: null, url: 'https://exemplo.com.br/a', snippet: null },
+    ],
+  };
+
+  it('converte a resposta de um link', () => {
+    const result = parsePredict(backend, 'g1.globo.com/sp/sao-paulo/noticia.ghtml');
+    expect(result.prediction).toBe('fake');
+    expect(result.probabilities).toEqual({ fake: 0.81, true: 0.19 });
+    expect(result.sourceUrl).toBe('https://g1.globo.com/sp/sao-paulo/noticia.ghtml');
+    expect(result.related).toHaveLength(1);
+    expect(result.related[0].domain).toBe('www.band.uol.com.br');
+    expect(result.thinExtraction).toBe(false);
+  });
+
+  it('converte a resposta de um texto colado (url nula, sem relacionados)', () => {
+    const result = parsePredict(
+      { ...backend, url: null, prediction: 1, probabilities: { fake: 0.1, true: 0.9 }, related: [] },
+      'texto colado',
+    );
+    expect(result.prediction).toBe('true');
+    expect(result.sourceUrl).toBeNull();
+    expect(result.related).toEqual([]);
+  });
+
+  it('propaga o erro no formato do backend', () => {
+    expect(() =>
+      parsePredict({ error: { code: 'page_unreachable', message: 'x' } }, 'enviado'),
+    ).toThrow(expect.objectContaining({ code: 'page_unreachable' }));
   });
 });

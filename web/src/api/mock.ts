@@ -11,7 +11,7 @@
  *   • qualquer outro texto         → alterna 3b → 3c → 3d
  *
  * Para ver os estados de erro, inclua na entrada:
- *   #erro-rede · #erro-pagina · #erro-classificacao
+ *   #erro-rede · #erro-pagina · #erro-classificacao · #erro-limite
  *
  * E #pouco-texto, num link, para a extração pobre (a classificação some).
  */
@@ -113,6 +113,7 @@ export async function predict(text: string, signal?: AbortSignal): Promise<Analy
   if (lowered.includes('#erro-rede')) throw new ApiError('network');
   if (lowered.includes('#erro-pagina')) throw new ApiError('page_unreachable');
   if (lowered.includes('#erro-classificacao')) throw new ApiError('classification_failed');
+  if (lowered.includes('#erro-limite')) throw new ApiError('rate_limited');
 
   const frame = pickFrame(text, lowered);
   // A origem é o que o usuário mandou quando foi um link, não a do fixture.
