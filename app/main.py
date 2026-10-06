@@ -17,10 +17,8 @@ BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
 DEFAULT_MODEL_NAME = "neuralmind/bert-base-portuguese-cased"
-# Modelo final da documentação (seção 7.5): a Regressão Logística. O SVM de
-# app/model/ foi o baseline e continua disponível pelo .env.
+# Modelo final da documentação (seção 7.5): a Regressão Logística.
 DEFAULT_CLASSIFICATION_MODEL = "../model/supervised/results/logistic_regression_model.pkl"
-DEFAULT_SCALER_MODEL = "model/scaler.pkl"
 DEFAULT_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
 
 
@@ -38,10 +36,6 @@ async def lifespan(app: FastAPI):
     app.state.classifier = joblib.load(
         resolve_path(os.getenv("CLASSIFICATION_MODEL") or DEFAULT_CLASSIFICATION_MODEL)
     )
-    # As 4 features de texto entram padronizadas (documentação, seção 5.4).
-    # SCALER_MODEL vazio desliga o scaler, para modelos treinados com elas cruas.
-    scaler_path = os.getenv("SCALER_MODEL", DEFAULT_SCALER_MODEL)
-    app.state.scaler = joblib.load(resolve_path(scaler_path)) if scaler_path else None
     yield
 
 app = FastAPI(lifespan=lifespan)

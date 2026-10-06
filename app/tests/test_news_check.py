@@ -27,19 +27,13 @@ RELATED = [{"title": "Outra cobertura", "url": "https://www.estadao.com.br/a", "
 class FakeClassifier:
     classes_ = np.array([0, 1])
 
-    def __init__(self, p_true=0.2, n_features=772):
+    def __init__(self, p_true=0.2):
         self.p_true = p_true
-        self.n_features_in_ = n_features
         self.seen = None
 
     def predict_proba(self, X):
         self.seen = X
         return np.array([[1 - self.p_true, self.p_true]])
-
-
-class FakeScaler:
-    def transform(self, X):
-        return X * 10
 
 
 @pytest.fixture
@@ -69,7 +63,6 @@ def client(calls):
     state.bert_tokenizer = None
     state.bert_model = None
     state.classifier = FakeClassifier()
-    state.scaler = None
     state.limiter.enabled = False
     yield TestClient(main.app)
     state.limiter.enabled = True
@@ -198,7 +191,7 @@ def test_origem_desconhecida_nao_ganha_cors(client):
 
 # ─── Features ────────────────────────────────────────────────────────────────
 
-def state_with(classifier, scaler=None):
+def state_with(classifier):
     class State:
         pass
 
@@ -206,25 +199,7 @@ def state_with(classifier, scaler=None):
     state.bert_model = None
     state.bert_tokenizer = None
     state.classifier = classifier
-    state.scaler = scaler
     return state
-
-
-def test_modelo_so_com_bert_recebe_768_features(calls):
-    X = controller.build_features(state_with(FakeClassifier(n_features=768)), "TEXTO!!")
-    assert X.shape == (1, 768)
-
-
-def test_modelo_com_features_de_texto_recebe_772(calls):
-    X = controller.build_features(state_with(FakeClassifier()), "TEXTO!!")
-    assert X.shape == (1, 772)
-    assert X[0, 768:].tolist() == [1, 1, 0, 0]
-
-
-def test_scaler_aplica_nas_features_de_texto(calls):
-    X = controller.build_features(state_with(FakeClassifier(), FakeScaler()), "TEXTO!!")
-    assert X[0, 768:].tolist() == [10, 10, 0, 0]
-    assert X[0, :768].tolist() == [1] * 768
 
 
 def test_probabilidades_seguem_a_ordem_dos_rotulos(calls):
@@ -240,8 +215,6 @@ def test_probabilidades_seguem_a_ordem_dos_rotulos(calls):
 def test_modelo_sem_predict_proba_usa_sigmoide(calls):
     class Margin:
         classes_ = np.array([0, 1])
-        n_features_in_ = 768
-
         def decision_function(self, X):
             return np.array([0.0])
 
@@ -250,19 +223,15 @@ def test_modelo_sem_predict_proba_usa_sigmoide(calls):
 
 
 @pytest.mark.parametrize(
-    "model_path, scaler_path",
+    "model_path",
     [
-        # O padrão de main.py: a Regressão Logística com o scaler.
-        (main.DEFAULT_CLASSIFICATION_MODEL, main.DEFAULT_SCALER_MODEL),
-        ("model/svm_(rbf)_model.pkl", "model/scaler.pkl"),
-        ("../model/supervised/results/xgboost_model.pkl", "model/scaler.pkl"),
+        main.DEFAULT_CLASSIFICATION_MODEL,
     ],
 )
-def test_modelos_do_repositorio(calls, model_path, scaler_path):
+def test_modelos_do_repositorio(calls, model_path):
     classifier = joblib.load(APP_DIR / model_path)
-    scaler = joblib.load(APP_DIR / scaler_path) if scaler_path else None
 
-    probabilities = controller.classify(state_with(classifier, scaler), "URGENTE!!! Compartilhe antes que apaguem!!")
+    probabilities = controller.classify(state_with(classifier), "URGENTE!!! Compartilhe antes que apaguem!!")
 
     assert len(probabilities) == 2
     assert sum(probabilities) == pytest.approx(1)

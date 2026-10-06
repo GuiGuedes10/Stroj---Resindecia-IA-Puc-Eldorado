@@ -84,16 +84,14 @@ em vez de erro.
 
 Tudo em `app/.env` (veja `app/.env.example`). Por padrão o backend usa o
 modelo final da documentação (seção 7.5), a Regressão Logística de
-`model/supervised/results/`, com as 4 features de texto padronizadas pelo
-`app/model/scaler.pkl` (seção 5.4). Para usar o SVM, baseline do estudo:
+`model/supervised/results/`, usando apenas os 768 embeddings do BERT.
 
 ```dotenv
 CLASSIFICATION_MODEL="model/svm_(rbf)_model.pkl"
 ```
 
-O backend aceita modelos com 768 features (só o BERT) ou 772 (BERT + as 4
-features de texto) e decide pelo `n_features_in_` do modelo. `SCALER_MODEL`
-vazio desliga a padronização das 4 features.
+O backend envia ao classificador apenas os 768 embeddings produzidos pelo
+BERT.
 
 ## Testes
 

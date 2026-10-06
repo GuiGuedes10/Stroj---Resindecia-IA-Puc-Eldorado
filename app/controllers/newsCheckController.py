@@ -5,7 +5,7 @@ from fastapi.concurrency import run_in_threadpool
 from services.bert import extract_bert_embeddings_with_chunks
 from services.crawler import web_extract_text, search_related
 from utils.errors import ApiError
-from utils.utils import extract_features_from_text, normalize_url
+from utils.utils import normalize_url
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,6 @@ MAX_TEXT_LENGTH = 20_000
 # Rótulos do dataset (training_data/dataset.ipynb): 0 = falsa, 1 = verdadeira.
 LABEL_FAKE = 0
 LABEL_TRUE = 1
-
 
 async def newsCheck(request: Request):
     try:
@@ -72,7 +71,11 @@ def analyze(state, entrada: str):
 # Devolve [p_falsa, p_verdadeira], na ordem dos rótulos 0 e 1.
 def classify(state, text: str):
     classifier = state.classifier
-    X = build_features(state, text)
+    X = extract_bert_embeddings_with_chunks(
+        text_list=[text],
+        bert_model=state.bert_model,
+        tokenizer=state.bert_tokenizer
+    )
 
     if hasattr(classifier, "predict_proba"):
         probs = classifier.predict_proba(X)[0]
@@ -84,23 +87,3 @@ def classify(state, text: str):
     score = float(classifier.decision_function(X)[0])
     p_true = float(1 / (1 + np.exp(-score)))
     return [1 - p_true, p_true]
-
-
-def build_features(state, text: str):
-    X_bert = extract_bert_embeddings_with_chunks(
-        text_list=[text],
-        bert_model=state.bert_model,
-        tokenizer=state.bert_tokenizer
-    )
-
-    # 768 = só o BERT. 772 = BERT + as 4 features de texto (utils/utils.py).
-    n_expected = getattr(state.classifier, "n_features_in_", X_bert.shape[1])
-    if n_expected == X_bert.shape[1]:
-        return X_bert
-
-    raw_features = extract_features_from_text(text)
-    extra_features = np.array(raw_features, dtype=float).reshape(1, -1)
-    if state.scaler is not None:
-        extra_features = state.scaler.transform(extra_features)
-
-    return np.hstack([X_bert, extra_features])

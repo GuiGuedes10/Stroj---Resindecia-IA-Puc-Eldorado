@@ -14,11 +14,11 @@ torch==2.14.0
 transformers==5.16.1
 xgboost==3.4.1
 # backend
+ddgs==9.16.0
 fastapi[standard]==0.141.1
 joblib==1.6.0
 python-dotenv==1.2.3
 slowapi==0.1.10
-trafilatura==2.2.0
-ddgs==9.16.0
+trafilatura==2.3.0
 # testes
 pytest==9.1.1
