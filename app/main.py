@@ -1,28 +1,66 @@
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import joblib
 from dotenv import load_dotenv
 from transformers import AutoTokenizer, AutoModel
-from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from routes import newsCheckRoute
+from utils.errors import ApiError, api_error_handler, rate_limit_handler
 
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent
+
+# O .env fica em app/, ao lado deste arquivo, de onde quer que o servidor seja iniciado.
+load_dotenv(BASE_DIR / ".env")
+
+DEFAULT_MODEL_NAME = "neuralmind/bert-base-portuguese-cased"
+# Modelo final da documentação (seção 7.5): a Regressão Logística. O SVM de
+# app/model/ foi o baseline e continua disponível pelo .env.
+DEFAULT_CLASSIFICATION_MODEL = "../model/supervised/results/logistic_regression_model.pkl"
+DEFAULT_SCALER_MODEL = "model/scaler.pkl"
+DEFAULT_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
+
+
+def resolve_path(value: str) -> Path:
+    # Caminhos relativos no .env são relativos a app/, não ao diretório atual.
+    path = Path(value)
+    return path if path.is_absolute() else BASE_DIR / path
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.bert_tokenizer = AutoTokenizer.from_pretrained(os.getenv("MODEL_NAME"))
-    app.state.bert_model = AutoModel.from_pretrained(os.getenv("MODEL_NAME"))
-    app.state.svm_model = joblib.load(os.getenv("CLASSIFICATION_MODEL"))
-    app.state.scaler = joblib.load(os.getenv("SCALER_MODEL"))
+    model_name = os.getenv("MODEL_NAME") or DEFAULT_MODEL_NAME
+    app.state.bert_tokenizer = AutoTokenizer.from_pretrained(model_name)
+    app.state.bert_model = AutoModel.from_pretrained(model_name)
+    app.state.classifier = joblib.load(
+        resolve_path(os.getenv("CLASSIFICATION_MODEL") or DEFAULT_CLASSIFICATION_MODEL)
+    )
+    # As 4 features de texto entram padronizadas (documentação, seção 5.4).
+    # SCALER_MODEL vazio desliga o scaler, para modelos treinados com elas cruas.
+    scaler_path = os.getenv("SCALER_MODEL", DEFAULT_SCALER_MODEL)
+    app.state.scaler = joblib.load(resolve_path(scaler_path)) if scaler_path else None
     yield
 
 app = FastAPI(lifespan=lifespan)
 
-app.state.limiter = newsCheckRoute.limiter 
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# O front roda em outra origem (Vite em :5173), então o navegador exige CORS.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        origin.strip()
+        for origin in os.getenv("CORS_ORIGINS", DEFAULT_CORS_ORIGINS).split(",")
+        if origin.strip()
+    ],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
+
+app.state.limiter = newsCheckRoute.limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_handler)
+app.add_exception_handler(ApiError, api_error_handler)
 
 @app.get("/")
 def read_root():

@@ -36,9 +36,38 @@ def extract_features_from_text(textos):
         possui_caracteres_especiais(textos)
     )
 
-def is_url(text: str) -> bool:
+BARE_HOST = re.compile(
+    r"^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$",
+    re.IGNORECASE,
+)
+
+
+# A mesma regra do front (web/src/domain/input.ts, isLink): aceita
+# "https://g1.globo.com/..." e também "g1.globo.com/..." sem esquema.
+# Devolve a URL com esquema, ou None quando a entrada é texto.
+def normalize_url(text: str):
+    value = text.strip()
+    if not value or re.search(r"\s", value):
+        return None
+
+    has_scheme = re.match(r"^https?://", value, re.IGNORECASE) is not None
+    url = value if has_scheme else f"https://{value}"
+
     try:
-        result = urlparse(text.strip())
-        return all([result.scheme in ["http", "https"], result.netloc])
-    except Exception:
-        return False
+        host = urlparse(url).hostname
+    except ValueError:
+        return None
+    if not host or "." not in host:
+        return None
+
+    if not has_scheme:
+        # Sem esquema, exige um host plausível: evita tratar
+        # "palavra...palavra" como endereço.
+        try:
+            ascii_host = host.encode("idna").decode("ascii")
+        except UnicodeError:
+            return None
+        if not BARE_HOST.match(ascii_host):
+            return None
+
+    return url
