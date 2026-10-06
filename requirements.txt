@@ -16,3 +16,7 @@ xgboost==3.4.1
 # backend
 fastapi[standard]==0.141.1
 joblib==1.6.0
+python-dotenv==1.2.3
+slowapi==0.1.10
+trafilatura==2.2.0
+ddgs==9.16.0
