@@ -1,0 +1,47 @@
+/* Três colunas de 960px no total, alinhadas à esquerda (frame 3a). */
+
+.steps {
+  display: grid;
+  width: 100%;
+  max-width: var(--stroj-steps-width);
+  margin: 64px auto 0;
+  padding: 0;
+  gap: 32px;
+  grid-template-columns: repeat(3, 1fr);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--color-neutral-400);
+  list-style: none;
+  text-align: left;
+}
+
+.steps__item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.steps__kicker {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-neutral-500);
+}
+
+.steps__body {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .steps {
+    grid-template-columns: 1fr 1fr;
+    margin-top: 48px;
+  }
+}
+
+@media (max-width: 700px) {
+  .steps {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}

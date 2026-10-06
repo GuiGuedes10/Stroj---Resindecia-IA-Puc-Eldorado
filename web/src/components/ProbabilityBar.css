@@ -1,0 +1,42 @@
+.probability {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.probability__bar {
+  display: flex;
+  height: 8px;
+  gap: 2px;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+}
+
+/* Ordem invertida em relação ao arquivo de design, a pedido: Verdadeira à
+   esquerda, Falsa à direita, com os valores abaixo alinhados a cada ponta.
+   A ordem visual é definida no JSX; aqui ficam só as cores. */
+.probability__fill--fake {
+  background: var(--color-danger);
+}
+
+/* A cor não é o único sinal: a hachura diagonal sobrevive a daltonismo
+   vermelho-verde, projetor ruim e impressão em cinza. */
+.probability__fill--true {
+  background-color: var(--color-success);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--color-neutral-900) 45%, transparent) 0 2px,
+    transparent 2px 5px
+  );
+}
+
+.probability__values {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.probability__label {
+  color: var(--color-neutral-400);
+}
