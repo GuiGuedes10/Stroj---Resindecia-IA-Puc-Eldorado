@@ -7,13 +7,15 @@
  *
  * O backend (app/controllers/newsCheckController.py) atende em
  * `POST /news/check`, recebe `{"request": ...}` e devolve
- * `{text, url, prediction: 0|1, probabilities: {fake, true}, related}`.
+ * `{text, prediction: 0|1, probabilities: [falsa, verdadeira], related}`.
  * Erros vêm como `{"error": {"code", "message"}}` com o status HTTP do caso.
- * O parse continua tolerante — probabilidades em 0–1 ou 0–100, objeto ou
- * tupla, `prediction` como string ou número, `related` ausente — para o
- * mock e para trocas de modelo no backend.
+ * O backend não devolve `url`: quando a entrada foi um link, a origem é o
+ * próprio link enviado. O parse continua tolerante — probabilidades em 0–1
+ * ou 0–100, objeto ou tupla, `prediction` como string ou número, `related`
+ * e `url` ausentes — para o mock e para trocas de modelo no backend.
  */
 
+import { isLink, toHref } from '../domain/input';
 
 // ─── O que o servidor manda ────────────────────────────────────────────────
 
@@ -220,7 +222,8 @@ function normalizeRelated(raw: PredictResponseWire['related']): RelatedContent[]
  * Resposta crua → `Analysis`. Lança `ApiError` quando falta o essencial.
  *
  * @param submitted o que o usuário enviou, usado como texto analisado se o
- *   backend não devolver `text`.
+ *   backend não devolver `text`, e como origem se for um link e o backend
+ *   não devolver `url`.
  */
 export function parsePredict(raw: unknown, submitted: string): Analysis {
   if (!raw || typeof raw !== 'object') {
@@ -242,7 +245,12 @@ export function parsePredict(raw: unknown, submitted: string): Analysis {
     (probabilities.fake >= probabilities.true ? 'fake' : 'true');
 
   const text = typeof body.text === 'string' && body.text ? body.text : submitted;
-  const sourceUrl = typeof body.url === 'string' && body.url ? body.url : null;
+  const sourceUrl =
+    typeof body.url === 'string' && body.url
+      ? body.url
+      : isLink(submitted)
+        ? toHref(submitted)
+        : null;
 
   return {
     text,

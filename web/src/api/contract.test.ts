@@ -220,13 +220,13 @@ describe('mapeamento de erros', () => {
 });
 
 describe('resposta do backend (POST /news/check)', () => {
-  // O formato exato que app/controllers/newsCheckController.py devolve.
+  // O formato exato que app/controllers/newsCheckController.py devolve:
+  // sem `url` e com as probabilidades em [falsa, verdadeira].
   const backend = {
     // Acima de THIN_EXTRACTION_MAX_LENGTH, para não contar como extração pobre.
     text: 'Texto extraído da página da notícia. '.repeat(5),
-    url: 'https://g1.globo.com/sp/sao-paulo/noticia.ghtml',
     prediction: 0,
-    probabilities: { fake: 0.81, true: 0.19 },
+    probabilities: [0.81, 0.19],
     related: [
       {
         title: 'Colisão na Marginal Tietê deixa feridos',
@@ -238,7 +238,7 @@ describe('resposta do backend (POST /news/check)', () => {
     ],
   };
 
-  it('converte a resposta de um link', () => {
+  it('converte a resposta de um link: a origem é o link enviado', () => {
     const result = parsePredict(backend, 'g1.globo.com/sp/sao-paulo/noticia.ghtml');
     expect(result.prediction).toBe('fake');
     expect(result.probabilities).toEqual({ fake: 0.81, true: 0.19 });
@@ -248,14 +248,46 @@ describe('resposta do backend (POST /news/check)', () => {
     expect(result.thinExtraction).toBe(false);
   });
 
-  it('converte a resposta de um texto colado (url nula, sem relacionados)', () => {
+  it('converte a resposta de um texto colado (sem origem, sem relacionados)', () => {
     const result = parsePredict(
-      { ...backend, url: null, prediction: 1, probabilities: { fake: 0.1, true: 0.9 }, related: [] },
-      'texto colado',
+      { ...backend, prediction: 1, probabilities: [0.1, 0.9], related: [] },
+      'Texto colado da notícia, sem link nenhum.',
     );
     expect(result.prediction).toBe('true');
     expect(result.sourceUrl).toBeNull();
     expect(result.related).toEqual([]);
+  });
+
+  it('acusa extração pobre de um link mesmo sem `url` na resposta', () => {
+    const result = parsePredict(
+      { ...backend, text: 'Assine para continuar lendo.' },
+      'https://exemplo.com.br/paywall',
+    );
+    expect(result.sourceUrl).toBe('https://exemplo.com.br/paywall');
+    expect(result.thinExtraction).toBe(true);
+  });
+
+  it('lê a resposta de exemplo do backend (código-fonte da urna)', () => {
+    const result = parsePredict(
+      {
+        text: 'Vídeo mostra momento exato em que o código-fonte da urna é roubado. Confira agora!!!',
+        prediction: 0,
+        probabilities: [0.9957571029663086, 0.004242904484272003],
+        related: [
+          {
+            title: 'É falso que Moraes tenha cópia de código-fonte das urnas ... - G1',
+            url: 'https://g1.globo.com/fato-ou-fake/noticia/2026/09/03/e-fake.ghtml',
+            snippet: 'Vídeo enganoso alega que código-fonte das urnas eletrônicas teria sido alterado.',
+          },
+        ],
+      },
+      'Vídeo mostra momento exato em que o código-fonte da urna é roubado. Confira agora!!!',
+    );
+    expect(result.prediction).toBe('fake');
+    expect(result.probabilities.fake).toBeCloseTo(0.99576, 4);
+    expect(result.sourceUrl).toBeNull();
+    expect(result.thinExtraction).toBe(false);
+    expect(result.related[0].domain).toBe('g1.globo.com');
   });
 
   it('propaga o erro no formato do backend', () => {

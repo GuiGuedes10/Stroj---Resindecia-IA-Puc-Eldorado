@@ -19,9 +19,8 @@ describe('predict (cliente HTTP)', () => {
     const fetchMock = vi.fn().mockResolvedValue(
       jsonResponse(200, {
         text: 'Texto exemplo',
-        url: null,
         prediction: 1,
-        probabilities: { fake: 0.2, true: 0.8 },
+        probabilities: [0.2, 0.8],
         related: [],
       }),
     );

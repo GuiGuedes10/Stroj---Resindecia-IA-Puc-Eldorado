@@ -55,17 +55,18 @@ def analyze(state, entrada: str):
 
     related = search_related(text)
 
+    p_fake, p_true = probabilities
     return {
         "text": text,
-        "url": url,
         # A classe sai das probabilidades para as duas nunca se contradizerem
         # (no SVC, predict e predict_proba podem discordar perto da fronteira).
-        "prediction": LABEL_FAKE if probabilities["fake"] > probabilities["true"] else LABEL_TRUE,
+        "prediction": LABEL_FAKE if p_fake > p_true else LABEL_TRUE,
         "probabilities": probabilities,
         "related": related
     }
 
 
+# Devolve [p_falsa, p_verdadeira], na ordem dos rótulos 0 e 1.
 def classify(state, text: str):
     classifier = state.classifier
     X = build_features(state, text)
@@ -73,13 +74,13 @@ def classify(state, text: str):
     if hasattr(classifier, "predict_proba"):
         probs = classifier.predict_proba(X)[0]
         by_label = {int(label): float(p) for label, p in zip(classifier.classes_, probs)}
-        return {"fake": by_label[LABEL_FAKE], "true": by_label[LABEL_TRUE]}
+        return [by_label[LABEL_FAKE], by_label[LABEL_TRUE]]
 
     # Modelos sem predict_proba (SVC sem probability=True, por exemplo):
     # a margem de decisão vira probabilidade pela sigmoide.
     score = float(classifier.decision_function(X)[0])
     p_true = float(1 / (1 + np.exp(-score)))
-    return {"fake": 1 - p_true, "true": p_true}
+    return [1 - p_true, p_true]
 
 
 def build_features(state, text: str):

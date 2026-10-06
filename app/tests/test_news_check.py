@@ -87,11 +87,11 @@ def test_texto_colado(client, calls):
 
     assert response.status_code == 200
     body = response.json()
+    # O formato original do backend: probabilities em [falsa, verdadeira].
     assert body == {
         "text": "Governo anuncia pacote de mudanças no imposto de renda",
-        "url": None,
         "prediction": 0,
-        "probabilities": {"fake": pytest.approx(0.8), "true": pytest.approx(0.2)},
+        "probabilities": [pytest.approx(0.8), pytest.approx(0.2)],
         "related": RELATED,
     }
     assert calls["fetched"] == []
@@ -102,7 +102,6 @@ def test_link_com_esquema(client, calls):
     body = post(client, {"request": url}).json()
 
     assert calls["fetched"] == [url]
-    assert body["url"] == url
     assert body["text"] == PAGE_TEXT
     # A busca de relacionados usa o texto da página, não o endereço.
     assert calls["searched"] == [PAGE_TEXT]
@@ -112,7 +111,7 @@ def test_link_sem_esquema_ganha_https(client, calls):
     body = post(client, {"request": "g1.globo.com/sp/noticia.ghtml"}).json()
 
     assert calls["fetched"] == ["https://g1.globo.com/sp/noticia.ghtml"]
-    assert body["url"] == "https://g1.globo.com/sp/noticia.ghtml"
+    assert body["text"] == PAGE_TEXT
 
 
 def test_prediction_segue_as_probabilidades(client):
@@ -120,7 +119,7 @@ def test_prediction_segue_as_probabilidades(client):
     body = post(client, {"request": "Texto qualquer de notícia para classificar."}).json()
 
     assert body["prediction"] == 1
-    assert body["probabilities"]["true"] == pytest.approx(0.9)
+    assert body["probabilities"] == [pytest.approx(0.1), pytest.approx(0.9)]
 
 
 # ─── Erros no formato {"error": {"code", "message"}} ────────────────────────
@@ -228,6 +227,16 @@ def test_scaler_aplica_nas_features_de_texto(calls):
     assert X[0, :768].tolist() == [1] * 768
 
 
+def test_probabilidades_seguem_a_ordem_dos_rotulos(calls):
+    class Reversed(FakeClassifier):
+        classes_ = np.array([1, 0])
+
+        def predict_proba(self, X):
+            return np.array([[0.7, 0.3]])  # [verdadeira, falsa], na ordem de classes_
+
+    assert controller.classify(state_with(Reversed()), "texto") == [pytest.approx(0.3), pytest.approx(0.7)]
+
+
 def test_modelo_sem_predict_proba_usa_sigmoide(calls):
     class Margin:
         classes_ = np.array([0, 1])
@@ -237,7 +246,7 @@ def test_modelo_sem_predict_proba_usa_sigmoide(calls):
             return np.array([0.0])
 
     probabilities = controller.classify(state_with(Margin()), "texto")
-    assert probabilities == {"fake": pytest.approx(0.5), "true": pytest.approx(0.5)}
+    assert probabilities == [pytest.approx(0.5), pytest.approx(0.5)]
 
 
 @pytest.mark.parametrize(
@@ -255,8 +264,8 @@ def test_modelos_do_repositorio(calls, model_path, scaler_path):
 
     probabilities = controller.classify(state_with(classifier, scaler), "URGENTE!!! Compartilhe antes que apaguem!!")
 
-    assert set(probabilities) == {"fake", "true"}
-    assert probabilities["fake"] + probabilities["true"] == pytest.approx(1)
+    assert len(probabilities) == 2
+    assert sum(probabilities) == pytest.approx(1)
 
 
 # ─── Busca de relacionados ──────────────────────────────────────────────────

@@ -56,14 +56,14 @@ Resposta:
 ```json
 {
   "text": "texto analisado (o da página, quando a entrada é link)",
-  "url": "https://g1.globo.com/...  (null quando a entrada é texto)",
   "prediction": 0,
-  "probabilities": { "fake": 0.87, "true": 0.13 },
+  "probabilities": [0.87, 0.13],
   "related": [{ "title": "...", "url": "...", "snippet": "..." }]
 }
 ```
 
 `prediction` segue os rótulos do dataset: `0` = falsa, `1` = verdadeira.
+`probabilities` vem na mesma ordem: `[falsa, verdadeira]`.
 
 Erros vêm como `{"error": {"code": "...", "message": "..."}}`:
 
