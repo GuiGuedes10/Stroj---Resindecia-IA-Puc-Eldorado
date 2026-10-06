@@ -59,7 +59,7 @@ describe('normalizePrediction', () => {
   });
 
   it('não inventa classe a partir de um número inconclusivo', () => {
-    // É o que app/main.py devolve hoje: {"prediction": 0.5}.
+    // Um número inconclusivo (ex.: 0.5) não vira classe.
     expect(normalizePrediction(0.5)).toBeNull();
     expect(normalizePrediction(undefined)).toBeNull();
     expect(normalizePrediction('talvez')).toBeNull();

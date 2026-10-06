@@ -44,6 +44,9 @@ def analyze(state, entrada: str):
         text = web_extract_text(url)
         if not text or not text.strip():
             raise ApiError(502, "page_unreachable", "Não foi possível extrair o texto dessa página.")
+        # Páginas enormes passariam inteiras pelo BERT e pela resposta.
+        if len(text) > MAX_TEXT_LENGTH:
+            text = text[:MAX_TEXT_LENGTH].rsplit(" ", 1)[0]
     else:
         text = entrada
 

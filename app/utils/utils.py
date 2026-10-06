@@ -49,12 +49,17 @@ def normalize_url(text: str):
     value = text.strip()
     if not value or re.search(r"\s", value):
         return None
+    # "//g1.globo.com/..." é link para o front (WHATWG URL); aqui também.
+    if value.startswith("//"):
+        value = "https:" + value
 
     has_scheme = re.match(r"^https?://", value, re.IGNORECASE) is not None
     url = value if has_scheme else f"https://{value}"
 
     try:
-        host = urlparse(url).hostname
+        parsed = urlparse(url)
+        host = parsed.hostname
+        parsed.port  # porta inválida (":abc", ":99999") levanta ValueError
     except ValueError:
         return None
     if not host or "." not in host:

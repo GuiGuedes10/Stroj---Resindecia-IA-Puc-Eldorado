@@ -42,8 +42,10 @@ Com o mock ligado, o que volta depende da entrada:
 | texto com "imposto" | frame 3c — probabilidades próximas, 54% / 46% |
 | texto com "prefeitura" | frame 3d — sem conteúdo relacionado, 9% / 91% |
 | outro texto | alterna entre 3b, 3c e 3d |
+| link com `#pouco-texto` | extração pobre: a classificação some |
 
-E os estados de erro, incluindo na entrada: `#erro-rede`, `#erro-pagina`,
+E os estados de erro, incluindo numa entrada válida (link, ou texto com 30+
+caracteres e 4+ palavras): `#erro-rede`, `#erro-pagina`,
 `#erro-classificacao`, `#erro-limite`.
 
 ## Onde mexer quando o backend mudar

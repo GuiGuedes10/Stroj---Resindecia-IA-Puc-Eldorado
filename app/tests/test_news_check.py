@@ -286,8 +286,54 @@ def test_download_que_falha_vira_texto_vazio(monkeypatch):
     def boom(url):
         raise RuntimeError("sem rede")
 
+    monkeypatch.setattr(crawler, "is_public_url", lambda url: True)
     monkeypatch.setattr(crawler.trafilatura, "fetch_url", boom)
     assert crawler.web_extract_text("https://exemplo.com.br") == ""
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["http://127.0.0.1:8000/", "http://localhost/admin", "http://10.0.0.5/", "http://169.254.169.254/latest/meta-data/"],
+)
+def test_endereco_interno_nao_e_baixado(monkeypatch, url):
+    def fetch(url):
+        raise AssertionError("não deveria baixar")
+
+    monkeypatch.setattr(crawler.trafilatura, "fetch_url", fetch)
+    assert crawler.web_extract_text(url) == ""
+
+
+def test_busca_em_portugues_do_brasil(monkeypatch):
+    seen = {}
+
+    class Fake:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def text(self, query, **kwargs):
+            seen.update(kwargs)
+            return [{"title": "t", "href": "https://x.com.br", "body": "b"}]
+
+    monkeypatch.delenv("SEARCH_REGION", raising=False)
+    monkeypatch.setattr(crawler, "DDGS", Fake)
+    assert crawler.search_related("texto") == [{"title": "t", "url": "https://x.com.br", "snippet": "b"}]
+    assert seen["region"] == "br-pt"
+
+
+def test_pagina_enorme_e_cortada(client, monkeypatch):
+    monkeypatch.setattr(controller, "web_extract_text", lambda url: "palavra " * 10_000)
+    body = post(client, {"request": "https://exemplo.com.br/enorme"}).json()
+    assert len(body["text"]) <= controller.MAX_TEXT_LENGTH
+
+
+def test_rate_limit_invalido_volta_ao_padrao(monkeypatch):
+    from routes import newsCheckRoute
+
+    monkeypatch.setenv("RATE_LIMIT", "cinco por minuto")
+    assert newsCheckRoute.rate_limit() == "5/minute"
 
 
 # ─── Link ou texto: a mesma regra do front (web/src/domain/input.test.ts) ────
@@ -312,6 +358,8 @@ FRAME_TEXT = (
         ("absurdo", None),
         ("https://localhost", None),
         ("palavra...palavra", None),
+        ("//g1.globo.com/x", "https://g1.globo.com/x"),
+        ("https://g1.globo.com:abc/x", None),
     ],
 )
 def test_normalize_url(value, expected):

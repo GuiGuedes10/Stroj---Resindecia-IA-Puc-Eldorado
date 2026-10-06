@@ -17,7 +17,8 @@ São dois processos: o backend em `:8000` e o frontend em `:5173`.
 
 ### Backend
 
-Precisa de Python 3.12 ou mais novo (o `numpy==2.5.2` do `requirements.txt` exige).
+Precisa de Python 3.12, 3.13 ou 3.14 (o `numpy==2.5.2` exige 3.12+; o
+`torch==2.14.0` ainda não tem versão para 3.15).
 
 ```bash
 python -m venv .venv
@@ -34,7 +35,7 @@ cerca de 400 MB) é baixado do Hugging Face.
 
 ### Frontend
 
-Precisa de Node 20.19+ e pnpm.
+Precisa de Node 20.19+ ou 22.12+ (exigência do Vite 7) e pnpm.
 
 ```bash
 cd web
@@ -86,8 +87,8 @@ modelo final da documentação (seção 7.5), a Regressão Logística de
 `model/supervised/results/`, com as 4 features de texto padronizadas pelo
 `app/model/scaler.pkl` (seção 5.4). Para usar o SVM, baseline do estudo:
 
-```bash
-CLASSIFICATION_MODEL=model/svm_(rbf)_model.pkl
+```dotenv
+CLASSIFICATION_MODEL="model/svm_(rbf)_model.pkl"
 ```
 
 O backend aceita modelos com 768 features (só o BERT) ou 772 (BERT + as 4

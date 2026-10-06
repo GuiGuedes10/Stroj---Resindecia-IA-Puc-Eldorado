@@ -1,9 +1,11 @@
 /**
- * O contrato do backend — o ÚNICO arquivo a mexer quando ele mudar.
+ * O contrato do backend: formato da resposta e dos erros. O endpoint e o
+ * corpo do POST ficam em client.ts.
  *
- * Nada fora daqui conhece os nomes dos campos do servidor: `parsePredict`
+ * Nada fora daqui conhece os nomes dos campos da resposta: `parsePredict`
  * converte a resposta crua no `Analysis` que o resto do app usa, e
- * `toApiError` converte qualquer falha num `ApiError` de código fechado.
+ * `mapErrorCode` e `mapHttpStatus` convertem o código ou o status do
+ * servidor num `ApiErrorCode` fechado.
  *
  * O backend (app/controllers/newsCheckController.py) atende em
  * `POST /news/check`, recebe `{"request": ...}` e devolve
@@ -180,9 +182,9 @@ const FAKE_WORDS = new Set(['fake', 'falsa', 'falso', 'false']);
 const TRUE_WORDS = new Set(['true', 'verdadeira', 'verdadeiro', 'real']);
 
 /**
- * Lê a classe vencedora. Devolve `null` quando o campo não é conclusivo —
- * é o caso do `{"prediction": 0.5}` que o backend devolve hoje — e aí quem
- * decide é o maior das probabilidades.
+ * Lê a classe vencedora. Devolve `null` quando o campo não é conclusivo
+ * (ex.: 0.5 vindo de outro modelo) e aí quem decide é o maior das
+ * probabilidades.
  */
 export function normalizePrediction(raw: PredictResponseWire['prediction']): PredictionClass | null {
   if (typeof raw === 'string') {

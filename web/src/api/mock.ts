@@ -2,7 +2,8 @@
  * Mock do backend com as três respostas dos frames 3b, 3c e 3d — textos,
  * domínios e números copiados do arquivo de design.
  *
- * Liga com VITE_STROJ_MOCK=1 (já ligado em .env.development).
+ * Liga com VITE_STROJ_MOCK=1, que já vem em .env.mock (pnpm dev:mock). Em
+ * .env.development fica 0 e pnpm dev usa o backend.
  *
  * Qual resposta volta:
  *   • entrada que é link           → 3b (classificação clara, origem = URL)
