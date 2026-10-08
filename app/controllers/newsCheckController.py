@@ -1,0 +1,89 @@
+import logging
+import numpy as np
+from fastapi import Request
+from fastapi.concurrency import run_in_threadpool
+from services.bert import extract_bert_embeddings_with_chunks
+from services.crawler import web_extract_text, search_related
+from utils.errors import ApiError
+from utils.utils import normalize_url
+
+logger = logging.getLogger(__name__)
+
+# O mesmo limite do front (web/src/domain/input.ts, MAX_TEXT_LENGTH).
+MAX_TEXT_LENGTH = 20_000
+
+# Rótulos do dataset (training_data/dataset.ipynb): 0 = falsa, 1 = verdadeira.
+LABEL_FAKE = 0
+LABEL_TRUE = 1
+
+async def newsCheck(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        raise ApiError(400, "invalid_request", "Payload JSON inválido.")
+
+    # Link e texto chegam no mesmo campo; o backend decide qual é.
+    _request = body.get("request") if isinstance(body, dict) else None
+    if not isinstance(_request, str) or not _request.strip():
+        raise ApiError(400, "text_too_short", "O campo 'request' é obrigatório e não pode estar vazio.")
+
+    _request = _request.strip()
+    if len(_request) > MAX_TEXT_LENGTH:
+        raise ApiError(413, "text_too_long", f"O texto passa do limite de {MAX_TEXT_LENGTH} caracteres.")
+
+    # BERT, download da página e busca são bloqueantes: rodam fora do event
+    # loop para não travar as outras requisições.
+    return await run_in_threadpool(analyze, request.app.state, _request)
+
+
+def analyze(state, entrada: str):
+    url = normalize_url(entrada)
+
+    if url:
+        text = web_extract_text(url)
+        if not text or not text.strip():
+            raise ApiError(502, "page_unreachable", "Não foi possível extrair o texto dessa página.")
+        # Páginas enormes passariam inteiras pelo BERT e pela resposta.
+        if len(text) > MAX_TEXT_LENGTH:
+            text = text[:MAX_TEXT_LENGTH].rsplit(" ", 1)[0]
+    else:
+        text = entrada
+
+    try:
+        probabilities = classify(state, text)
+    except Exception:
+        logger.exception("Falha ao classificar o texto")
+        raise ApiError(500, "classification_failed", "Não foi possível classificar o texto.")
+
+    related = search_related(text)
+
+    p_fake, p_true = probabilities
+    return {
+        "text": text,
+        # A classe sai das probabilidades para as duas nunca se contradizerem
+        # (no SVC, predict e predict_proba podem discordar perto da fronteira).
+        "prediction": LABEL_FAKE if p_fake > p_true else LABEL_TRUE,
+        "probabilities": probabilities,
+        "related": related
+    }
+
+
+# Devolve [p_falsa, p_verdadeira], na ordem dos rótulos 0 e 1.
+def classify(state, text: str):
+    classifier = state.classifier
+    X = extract_bert_embeddings_with_chunks(
+        text_list=[text],
+        bert_model=state.bert_model,
+        tokenizer=state.bert_tokenizer
+    )
+
+    if hasattr(classifier, "predict_proba"):
+        probs = classifier.predict_proba(X)[0]
+        by_label = {int(label): float(p) for label, p in zip(classifier.classes_, probs)}
+        return [by_label[LABEL_FAKE], by_label[LABEL_TRUE]]
+
+    # Modelos sem predict_proba (SVC sem probability=True, por exemplo):
+    # a margem de decisão vira probabilidade pela sigmoide.
+    score = float(classifier.decision_function(X)[0])
+    p_true = float(1 / (1 + np.exp(-score)))
+    return [1 - p_true, p_true]
